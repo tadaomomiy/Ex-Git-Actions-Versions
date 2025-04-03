@@ -4,9 +4,9 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
+  # pull_request:
+  #   branches:
+  #     - main
 
 jobs:
   build:
@@ -96,10 +96,20 @@ jobs:
         run: |
           git config --global user.name 'github-actions'
           git config --global user.email 'github-actions@github.com'
-          git add package.json
-          git commit -m "chore(release): version ${{ env.new_version }}"
-          git tag v${{ env.new_version }}
-          git push origin main --tags
+
+          if git diff --exit-code; then
+            echo "Nenhuma mudança para commit"
+          else
+            git add package.json
+            git commit -m "chore(release): version ${{ env.new_version }}"
+            if git rev-parse "v${{ env.new_version }}" >/dev/null 2>&1; then
+              echo "Tag v${{ env.new_version }} já existe, ignorando..."
+            else
+              git tag "v${{ env.new_version }}"
+              git push origin "v${{ env.new_version }}"
+            fi
+            git push origin main --follow-tags
+          fi
       ######### VERSIONAMENTO #########
       
       ######### ENVIO E-MAIL #########
